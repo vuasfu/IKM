@@ -1,59 +1,84 @@
-class Stack:
-    """Реализация стека с базовыми операциями"""
+class StackNode:
+    def __init__(self, value):
+        self.value = value
+        self.next = None
 
+
+class Stack:
     def __init__(self):
-        self._items = []
+        self.top = None
+        self.size = 0
 
     def push(self, item):
-        """Добавление элемента на вершину стека"""
-        self._items.append(item)
+        """Добавляет элемент на вершину стека"""
+        new_node = StackNode(item)
+        new_node.next = self.top
+        self.top = new_node
+        self.size += 1
 
     def pop(self):
-        """Извлечение элемента с вершины стека"""
+        """Извлекает элемент с вершины стека"""
         if self.is_empty():
             raise IndexError("Попытка извлечения из пустого стека")
-        return self._items.pop()
+        value = self.top.value
+        self.top = self.top.next
+        self.size -= 1
+        return value
 
     def peek(self):
-        """Просмотр верхнего элемента без извлечения"""
+        """Возвращает элемент с вершины стека без удаления"""
         if self.is_empty():
             raise IndexError("Попытка просмотра пустого стека")
-        return self._items[-1]
+        return self.top.value
 
     def is_empty(self):
-        """Проверка на пустоту"""
-        return len(self._items) == 0
+        """Проверяет, пуст ли стек"""
+        return self.top is None
 
-    def size(self):
-        """Количество элементов в стеке"""
-        return len(self._items)
+    def get_size(self):
+        """Возвращает размер стека"""
+        return self.size
 
 
 class ExpressionCalculator:
     """Калькулятор выражений с операциями min и max"""
 
     def __init__(self):
-        self._operations = {'m': min, 'M': max}
+        self.operations = {'m': min, 'M': max}
 
-    def _apply_operation(self, stack):
+    def apply_operation(self, stack):
         """Применяет операцию к аргументам из стека"""
-        args = []
-        # Собираем аргументы (они в стеке в обратном порядке)
-        while stack.peek() != '(':
-            args.append(stack.pop())
-        stack.pop()  # Удаляем '('
+        # Извлекаем второй аргумент
+        if stack.is_empty():
+            raise ValueError("Недостаточно аргументов")
+        arg2 = stack.pop()
 
-        if len(args) != 2:
-            raise ValueError(f"Ожидалось 2 аргумента, получено {len(args)}")
+        # Проверяем наличие первого аргумента
+        if stack.is_empty() or stack.peek() == '(':
+            raise ValueError("Недостаточно аргументов")
+        arg1 = stack.pop()
+
+        # Проверяем открывающую скобку
+        if stack.is_empty() or stack.pop() != '(':
+            raise ValueError("Несбалансированные скобки")
+
+        # Проверяем наличие операции
+        if stack.is_empty():
+            raise ValueError("Не найдена операция")
 
         operation_char = stack.pop()
-        if operation_char not in self._operations:
-            raise ValueError(f"Неизвестная операция: {operation_char}")
+        if operation_char not in self.operations:
+            raise ValueError(f"Неизвестная операция: '{operation_char}'")
 
-        return self._operations[operation_char](args[1], args[0])
+        return self.operations[operation_char](arg1, arg2)
 
     def calculate(self, expression):
         """Вычисляет значение выражения"""
+        expression = expression.replace(' ', '')
+
+        if not expression:
+            raise ValueError("Пустое выражение")
+
         stack = Stack()
         i = 0
         n = len(expression)
@@ -61,14 +86,14 @@ class ExpressionCalculator:
         while i < n:
             char = expression[i]
 
-            if char in self._operations:
+            if char in self.operations:
                 stack.push(char)
                 i += 1
             elif char == '(':
                 stack.push(char)
                 i += 1
             elif char == ')':
-                result = self._apply_operation(stack)
+                result = self.apply_operation(stack)
                 stack.push(result)
                 i += 1
             elif char.isdigit():
@@ -77,54 +102,44 @@ class ExpressionCalculator:
                     num_str.append(expression[i])
                     i += 1
                 stack.push(int(''.join(num_str)))
-            elif char == ',' or char == ' ':
-                i += 1  # Игнорируем разделители
+            elif char == ',':
+                i += 1
             else:
                 raise ValueError(f"Недопустимый символ: '{char}'")
 
-        if stack.size() != 1:
+        if stack.get_size() != 1:
             raise ValueError("Неполное выражение")
 
         return stack.pop()
 
 
 def main():
-    """Основной интерфейс программы"""
     calculator = ExpressionCalculator()
 
-    # Приветственное сообщение
-    print("╔══════════════════════════════════════╗")
-    print("║   КАЛЬКУЛЯТОР MIN/MAX ВЫРАЖЕНИЙ     ║")
-    print("╚══════════════════════════════════════╝")
-
+    print("КАЛЬКУЛЯТОР MIN/MAX ВЫРАЖЕНИЙ")
     print("\nИнструкция:")
     print("• m(a,b) - минимум из a и b")
     print("• M(a,b) - максимум из a и b")
-    print("• Примеры:")
-    print("  m(5,10) → 5")
-    print("  M(15,m(16,8)) → 15")
-    print("  m(M(2,5),M(3,8)) → 5")
+    print("• Примеры: m(5,10) → 5, M(15,m(16,8)) → 15")
     print("\nВведите 'выход' для завершения")
 
     while True:
+        user_input = input("\n> Введите выражение: ").strip()
+
+        if user_input.lower() in ('выход'):
+            print("До свидания!")
+            break
+
+        if not user_input:
+            print("Пустой ввод. Попробуйте снова.")
+            continue
+
         try:
-            user_input = input("\n> Введите выражение: ").strip()
-
-            if user_input.lower() in ('выход', 'exit', 'quit'):
-                print("До свидания!")
-                break
-
-            if not user_input:
-                print("⚠ Пустой ввод. Попробуйте снова.")
-                continue
-
             result = calculator.calculate(user_input)
-            print(f"✔ Результат: {result}")
-
+            print(f"Результат: {result}")
         except Exception as e:
-            print(f"✘ Ошибка: {str(e)}")
-            print("Правильный формат: m(число1,число2) или M(число1,число2)")
-            print("Пример корректного ввода: M(m(2,5),M(3,8))")
+            print(f"Ошибка: {str(e)}")
+            print("Формат: m(число1,число2) или M(число1,число2)")
 
 
 if __name__ == "__main__":

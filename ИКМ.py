@@ -32,7 +32,7 @@ class Stack:
         return self.top.value
 
     def is_empty(self):
-        """Проверяет, пуст ли стек"""
+        """Проверяет наличие в стеке данных"""
         return self.top is None
 
     def get_size(self):
@@ -41,7 +41,7 @@ class Stack:
 
 
 class ExpressionCalculator:
-    """Калькулятор выражений с операциями min и max"""
+    """Калькулятор min и max"""
 
     def __init__(self):
         self.operations = {'m': min, 'M': max}
@@ -126,13 +126,9 @@ def main():
     while True:
         user_input = input("\n> Введите выражение: ").strip()
 
-        if user_input.lower() in ('выход'):
+        if user_input.lower() == 'выход':
             print("До свидания!")
             break
-
-        if not user_input:
-            print("Пустой ввод. Попробуйте снова.")
-            continue
 
         try:
             result = calculator.calculate(user_input)
